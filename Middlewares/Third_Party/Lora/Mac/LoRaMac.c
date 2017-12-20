@@ -1105,6 +1105,20 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                 LoRaMacFlags.Bits.McpsInd = 1;
                 break;
             }
+        case FRAME_TYPE_RFU:
+            {
+                address = payload[pktHeaderLen++];
+                address |= ( (uint32_t)payload[pktHeaderLen++] << 8 );
+                address |= ( (uint32_t)payload[pktHeaderLen++] << 16 );
+                address |= ( (uint32_t)payload[pktHeaderLen++] << 24 );
+                if( address == LoRaMacDevAddr )
+                {
+                    /*
+                     * MY Beacon!
+                     */
+                }
+                break;
+            }
         default:
             McpsIndication.Status = LORAMAC_EVENT_INFO_STATUS_ERROR;
             PrepareRxDoneAbort( );
