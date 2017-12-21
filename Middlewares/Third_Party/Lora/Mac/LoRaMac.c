@@ -2409,6 +2409,9 @@ LoRaMacStatus_t LoRaMacInitialization( LoRaMacPrimitives_t *primitives, LoRaMacC
     phyParam = RegionGetPhyParam( LoRaMacRegion, &getPhy );
     LoRaMacParamsDefaults.AntennaGain = phyParam.fValue;
 
+    LoRaMacParamsDefaults.RxBeaconChannel.Datarate = 1; // DR_0: SF12 - BW125
+    LoRaMacParamsDefaults.RxBeaconChannel.Frequency = 921900000; // KR920_RX_WND_2_FREQ
+
     RegionInitDefaults( LoRaMacRegion, INIT_TYPE_INIT );
 
     // Init parameters which are not set in function ResetMacParameters
@@ -3145,11 +3148,11 @@ LoRaMacStatus_t LoRaMacMlmeRequest( MlmeReq_t *mlmeRequest )
         case MLME_BEACON_SYNC:
         {
           RxBeaconConfig.Channel = Channel;
-          RxBeaconConfig.DrOffset = LoRaMacParams.Rx1DrOffset; //FIXME
-          RxBeaconConfig.DownlinkDwellTime = LoRaMacParams.DownlinkDwellTime;
           RxBeaconConfig.RepeaterSupport = RepeaterSupport;
           RxBeaconConfig.RxContinuous = false;
-          RxBeaconConfig.Window = RxSlot;
+          RxBeaconConfig.Window = 1;
+          RxBeaconConfig.Frequency = LoRaMacParamsDefaults.RxBeaconChannel.Frequency;
+          RxBeaconConfig.Datarate = LoRaMacParamsDefaults.RxBeaconChannel.Datarate;
 
           RegionRxConfig( LoRaMacRegion, &RxBeaconConfig, ( int8_t* )&McpsIndication.RxDatarate );
           RxWindowSetup( RxBeaconConfig.RxContinuous, LoRaMacParams.MaxRxWindow );
