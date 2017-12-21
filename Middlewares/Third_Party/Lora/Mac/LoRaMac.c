@@ -349,6 +349,7 @@ static uint32_t RxWindow2Delay;
 /*!
  * LoRaMac Rx windows configuration
  */
+static RxConfigParams_t RxBeaconConfig;
 static RxConfigParams_t RxWindow1Config;
 static RxConfigParams_t RxWindow2Config;
 
@@ -3141,6 +3142,18 @@ LoRaMacStatus_t LoRaMacMlmeRequest( MlmeReq_t *mlmeRequest )
 
     switch( mlmeRequest->Type )
     {
+        case MLME_BEACON_SYNC:
+        {
+          RxBeaconConfig.Channel = Channel;
+          RxBeaconConfig.DrOffset = LoRaMacParams.Rx1DrOffset; //FIXME
+          RxBeaconConfig.DownlinkDwellTime = LoRaMacParams.DownlinkDwellTime;
+          RxBeaconConfig.RepeaterSupport = RepeaterSupport;
+          RxBeaconConfig.RxContinuous = false;
+          RxBeaconConfig.Window = RxSlot;
+
+          RegionRxConfig( LoRaMacRegion, &RxBeaconConfig, ( int8_t* )&McpsIndication.RxDatarate );
+          RxWindowSetup( RxBeaconConfig.RxContinuous, LoRaMacParams.MaxRxWindow );
+        }
         case MLME_JOIN:
         {
             if( ( LoRaMacState & LORAMAC_TX_DELAYED ) == LORAMAC_TX_DELAYED )
