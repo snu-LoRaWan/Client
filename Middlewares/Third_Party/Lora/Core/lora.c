@@ -640,6 +640,7 @@ void lora_fsm( void)
 #endif
 
         TimerInit( &TxNextPacketTimer, OnTxNextPacketTimerEvent );
+        TimerInit( &SxNextBeaconTimer, OnSxNextBeaconTimerEvent );
         
         mibReq.Type = MIB_ADR;
         mibReq.Param.AdrEnable = LoRaParamInit->AdrEnable;
@@ -675,22 +676,19 @@ void lora_fsm( void)
 #endif
 
 #endif
-      /* use beacon */
-      DeviceState = DEVICE_STATE_BEACON_SYNC;
+      DeviceState = DEVICE_STATE_JOIN;
       break;
     }
-    case DEVICE_STATE_BEACON_SYNC:
+    case DEVICE_STATE_BEACON:
     {
       MlmeReq_t mlmeReq;
-      /* 
-       * TODO
-       * add state: MLME, DEVICE_STATE, Sx ~ Timer&Event
-       * check: NextTx
-       */
-      mlmeReq.Type = MLME_BEACON_SYNC;
+
+      mlmeReq.Type = MLME_BEACON;
       LoRaMacMlmeRequest( &mlmeReq );
 
-      TimerInit( &SxNextBeaconTimer, OnSxNextBeaconTimerEvent );
+      TimerSetValue( &SxNextBeaconTimer, LoRaParamInit->RxBeaconCycleTime );
+      TimerStart( &SxNextBeaconTimer );
+      // TODO: Reset other timers not to interfere beacon
 
       DeviceState = DEVICE_STATE_SLEEP;
       break;
@@ -712,7 +710,7 @@ void lora_fsm( void)
           LoRaMacMlmeRequest( &mlmeReq );
       }
 
-      DeviceState = DEVICE_STATE_SLEEP;
+      DeviceState = DEVICE_STATE_BEACON;
 #else
       mibReq.Type = MIB_NET_ID;
       mibReq.Param.NetID = LORAWAN_NETWORK_ID;
@@ -736,12 +734,6 @@ void lora_fsm( void)
 
       DeviceState = DEVICE_STATE_SEND;
 #endif
-      break;
-    }
-    case DEVICE_STATE_BEACON:
-    {
-      PRINTF("BEACON\n\r");
-      /* set timer */
       break;
     }
     case DEVICE_STATE_JOINED:

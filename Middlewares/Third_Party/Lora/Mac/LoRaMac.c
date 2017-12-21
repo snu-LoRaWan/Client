@@ -3145,7 +3145,7 @@ LoRaMacStatus_t LoRaMacMlmeRequest( MlmeReq_t *mlmeRequest )
 
     switch( mlmeRequest->Type )
     {
-        case MLME_BEACON_SYNC:
+        case MLME_BEACON:
         {
           RxBeaconConfig.Channel = Channel;
           RxBeaconConfig.RepeaterSupport = RepeaterSupport;
