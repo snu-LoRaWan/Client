@@ -155,6 +155,10 @@ typedef struct sLoRaParam
  * @brief Number of trials for the join request.
  */
     uint8_t NbTrials;
+/*!
+ * @brief Beacon Cycle
+ */
+    uint32_t RxBeaconCycleTime;
 
 } LoRaParam_t;
 

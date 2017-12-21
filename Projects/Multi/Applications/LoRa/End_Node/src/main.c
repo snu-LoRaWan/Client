@@ -103,6 +103,7 @@ Maintainer: Miguel Luis, Gregory Cristian and Wael Guibene
  * Number of trials for the join request.
  */
 #define JOINREQ_NBTRIALS                            3
+#define APP_RX_BEACONCYCLE                          30000
 
 /* Private macro -------------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -143,7 +144,8 @@ static  LoRaParam_t LoRaParamInit= {TX_ON_TIMER,
                                     LORAWAN_ADR_ON,
                                     DR_0,
                                     LORAWAN_PUBLIC_NETWORK,
-                                    JOINREQ_NBTRIALS};
+                                    JOINREQ_NBTRIALS,
+                                    APP_RX_BEACONCYCLE};
 
 /* Private functions ---------------------------------------------------------*/
 
