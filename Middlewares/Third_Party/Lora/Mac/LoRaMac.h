@@ -987,6 +987,11 @@ typedef enum eMlme
      * LoRaWAN end-device certification
      */
     MLME_TXCW_1,
+    /*
+     * enum for Beacon
+     */
+    MLME_BEACON_SYNC,
+    MLME_BEACON,
 }Mlme_t;
 
 /*!
