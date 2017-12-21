@@ -103,7 +103,7 @@ Maintainer: Miguel Luis, Gregory Cristian and Wael Guibene
  * Number of trials for the join request.
  */
 #define JOINREQ_NBTRIALS                            3
-#define APP_RX_BEACONCYCLE                          25000
+#define APP_RX_BEACONCYCLE                          2500
 
 /* Private macro -------------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
