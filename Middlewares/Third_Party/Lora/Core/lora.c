@@ -675,12 +675,30 @@ void lora_fsm( void)
 #endif
 
 #endif
-      DeviceState = DEVICE_STATE_JOIN;
+      /* use beacon */
+      DeviceState = DEVICE_STATE_BEACON_SYNC;
+      break;
+    }
+    case DEVICE_STATE_BEACON_SYNC:
+    {
+      MlmeReq_t mlmeReq;
+      /* 
+       * TODO
+       * add state: MLME, DEVICE_STATE, Sx ~ Timer&Event
+       * check: NextTx
+       */
+      mlmeReq.Type = MLME_BEACON_SYNC;
+      LoRaMacMlmeRequest( &mlmeReq );
+
+      TimerInit( &SxNextBeaconTimer, OnSxNextBeaconTimerEvent );
+
+      DeviceState = DEVICE_STATE_SLEEP;
       break;
     }
     case DEVICE_STATE_JOIN:
     {
 #if( OVER_THE_AIR_ACTIVATION != 0 )
+      /* OTAA Join */
       MlmeReq_t mlmeReq;
     
       mlmeReq.Type = MLME_JOIN;
@@ -718,6 +736,12 @@ void lora_fsm( void)
 
       DeviceState = DEVICE_STATE_SEND;
 #endif
+      break;
+    }
+    case DEVICE_STATE_BEACON:
+    {
+      PRINTF("BEACON\n\r");
+      /* set timer */
       break;
     }
     case DEVICE_STATE_JOINED:
