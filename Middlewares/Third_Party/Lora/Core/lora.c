@@ -688,7 +688,9 @@ void lora_fsm( void)
 
       TimerSetValue( &SxNextBeaconTimer, LoRaParamInit->RxBeaconCycleTime );
       TimerStart( &SxNextBeaconTimer );
-      // TODO: Reset other timers not to interfere beacon
+
+      TimerSetValue( &TxNextPacketTimer,  5000); /* postpone Tx */
+      TimerStart( &TxNextPacketTimer );
 
       DeviceState = DEVICE_STATE_SLEEP;
       break;
