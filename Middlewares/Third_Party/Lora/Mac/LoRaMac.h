@@ -316,6 +316,10 @@ typedef struct sLoRaMacParams
      * Antenna gain of the node
      */
     float AntennaGain;
+    /*!
+     * LoRaMAC beacon reception window settings
+     */
+    Rx2ChannelParams_t RxBeaconChannel;
 }LoRaMacParams_t;
 
 /*!
@@ -1013,6 +1017,11 @@ typedef struct sMlmeReqJoin
     uint8_t *AppEui;
     /*!
      * AES-128 application key
+    /*
+     * enum for Beacon
+     */
+    MLME_BEACON_SYNC,
+    MLME_BEACON,
      *
      * LoRaWAN Specification V1.0.2, chapter 6.2.2
      */
