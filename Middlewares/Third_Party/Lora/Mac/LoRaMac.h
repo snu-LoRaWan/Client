@@ -994,8 +994,7 @@ typedef enum eMlme
     /*
      * enum for Beacon
      */
-    MLME_BEACON_SYNC,
-    MLME_BEACON,
+    MLME_BEACON
 }Mlme_t;
 
 /*!

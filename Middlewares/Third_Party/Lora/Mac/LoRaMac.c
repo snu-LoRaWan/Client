@@ -752,6 +752,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
     switch( macHdr.Bits.MType )
     {
         case FRAME_TYPE_JOIN_ACCEPT:
+            DBG_PRINTF( "\n\r*** [JoinAccept]\n\r" );
             if( IsLoRaMacNetworkJoined == true )
             {
                 McpsIndication.Status = LORAMAC_EVENT_INFO_STATUS_ERROR;
@@ -3176,10 +3177,13 @@ LoRaMacStatus_t LoRaMacMlmeRequest( MlmeReq_t *mlmeRequest )
     {
         case MLME_BEACON:
         {
+          DBG_PRINTF( "\n\r*** <MLME BEACON>\n\r" );
           RxBeaconChannel();
+          break;
         }
         case MLME_JOIN:
         {
+          DBG_PRINTF( "\n\r*** <MLME JOIN>\n\r" );
             if( ( LoRaMacState & LORAMAC_TX_DELAYED ) == LORAMAC_TX_DELAYED )
             {
                 return LORAMAC_STATUS_BUSY;
