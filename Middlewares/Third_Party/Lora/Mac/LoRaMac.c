@@ -337,6 +337,7 @@ static TimerEvent_t TxDelayedTimer;
  */
 static TimerEvent_t RxWindowTimer1;
 static TimerEvent_t RxWindowTimer2;
+static TimerEvent_t RxBeaconDataTimer;
 
 /*!
  * LoRaMac reception windows delay
@@ -835,6 +836,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                 address |= ( (uint32_t)payload[pktHeaderLen++] << 8 );
                 address |= ( (uint32_t)payload[pktHeaderLen++] << 16 );
                 address |= ( (uint32_t)payload[pktHeaderLen++] << 24 );
+                DBG_PRINTF( "\n\r*** [Downlink] addr = %d *****\n\r",  address);
 
                 if( address != LoRaMacDevAddr )
                 {
@@ -1108,17 +1110,23 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
             }
         case FRAME_TYPE_BEACON:
             {
-                address = payload[pktHeaderLen++];
-                address |= ( (uint32_t)payload[pktHeaderLen++] << 8 );
-                address |= ( (uint32_t)payload[pktHeaderLen++] << 16 );
-                address |= ( (uint32_t)payload[pktHeaderLen++] << 24 );
-                if( address == LoRaMacDevAddr )
-                {
-                    /*
-                     * Start to listen to downstream
-                     */
-                }
-                break;
+              address = payload[pktHeaderLen++];
+              address |= ( (uint32_t)payload[pktHeaderLen++] << 8 );
+              address |= ( (uint32_t)payload[pktHeaderLen++] << 16 );
+              address |= ( (uint32_t)payload[pktHeaderLen++] << 24 );
+
+              DBG_PRINTF( "\n\r*** [Beacon] addr = %u *****\n\r",  address);
+
+              if( address == LoRaMacDevAddr )
+              {
+                /*
+                 * Start to listen to downstream
+                 */
+                TimerSetValue( &RxBeaconDataTimer, 1000 );
+                TimerStart( &RxBeaconDataTimer );
+
+              }
+              break;
             }
         default:
             McpsIndication.Status = LORAMAC_EVENT_INFO_STATUS_ERROR;
@@ -1477,6 +1485,25 @@ static void OnRxWindow1TimerEvent( void )
     RxWindowSetup( RxWindow1Config.RxContinuous, LoRaMacParams.MaxRxWindow );
 }
 
+static void RxBeaconChannel ( void )
+{
+  RxBeaconConfig.Channel = Channel;
+  RxBeaconConfig.RepeaterSupport = RepeaterSupport;
+  RxBeaconConfig.RxContinuous = false;
+  RxBeaconConfig.Window = 1;
+  RxBeaconConfig.Frequency = LoRaMacParamsDefaults.RxBeaconChannel.Frequency;
+  RxBeaconConfig.Datarate = LoRaMacParamsDefaults.RxBeaconChannel.Datarate;
+
+  RegionRxConfig( LoRaMacRegion, &RxBeaconConfig, ( int8_t* )&McpsIndication.RxDatarate );
+  RxWindowSetup( RxBeaconConfig.RxContinuous, LoRaMacParams.MaxRxWindow );
+}
+
+static void OnRxBeaconDataTimerEvent( void )
+{
+  TimerStop( &RxBeaconDataTimer );
+  
+  RxBeaconChannel();
+}
 static void OnRxWindow2TimerEvent( void )
 {
     TimerStop( &RxWindowTimer2 );
@@ -2439,6 +2466,8 @@ LoRaMacStatus_t LoRaMacInitialization( LoRaMacPrimitives_t *primitives, LoRaMacC
     TimerInit( &RxWindowTimer2, OnRxWindow2TimerEvent );
     TimerInit( &AckTimeoutTimer, OnAckTimeoutTimerEvent );
 
+    TimerInit( &RxBeaconDataTimer, OnRxBeaconDataTimerEvent );
+
     // Store the current initialization time
     LoRaMacInitializationTime = TimerGetCurrentTime( );
 
@@ -3147,15 +3176,7 @@ LoRaMacStatus_t LoRaMacMlmeRequest( MlmeReq_t *mlmeRequest )
     {
         case MLME_BEACON:
         {
-          RxBeaconConfig.Channel = Channel;
-          RxBeaconConfig.RepeaterSupport = RepeaterSupport;
-          RxBeaconConfig.RxContinuous = false;
-          RxBeaconConfig.Window = 1;
-          RxBeaconConfig.Frequency = LoRaMacParamsDefaults.RxBeaconChannel.Frequency;
-          RxBeaconConfig.Datarate = LoRaMacParamsDefaults.RxBeaconChannel.Datarate;
-
-          RegionRxConfig( LoRaMacRegion, &RxBeaconConfig, ( int8_t* )&McpsIndication.RxDatarate );
-          RxWindowSetup( RxBeaconConfig.RxContinuous, LoRaMacParams.MaxRxWindow );
+          RxBeaconChannel();
         }
         case MLME_JOIN:
         {
