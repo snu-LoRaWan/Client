@@ -1123,7 +1123,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                 /*
                  * Start to listen to downstream
                  */
-                TimerSetValue( &RxBeaconDataTimer, 1000 );
+                TimerSetValue( &RxBeaconDataTimer, 500 );
                 TimerStart( &RxBeaconDataTimer );
 
               }
@@ -1486,7 +1486,7 @@ static void OnRxWindow1TimerEvent( void )
     RxWindowSetup( RxWindow1Config.RxContinuous, LoRaMacParams.MaxRxWindow );
 }
 
-static void RxBeaconChannel ( void )
+static void RxBeaconChannelWithTimeout ( uint32_t timeout )
 {
   RxBeaconConfig.Channel = Channel;
   RxBeaconConfig.RepeaterSupport = RepeaterSupport;
@@ -1494,6 +1494,7 @@ static void RxBeaconChannel ( void )
   RxBeaconConfig.Window = 1;
   RxBeaconConfig.Frequency = LoRaMacParamsDefaults.RxBeaconChannel.Frequency;
   RxBeaconConfig.Datarate = LoRaMacParamsDefaults.RxBeaconChannel.Datarate;
+  RxBeaconConfig.WindowTimeout = timeout;
 
   RegionRxConfig( LoRaMacRegion, &RxBeaconConfig, ( int8_t* )&McpsIndication.RxDatarate );
   RxWindowSetup( RxBeaconConfig.RxContinuous, LoRaMacParams.MaxRxWindow );
@@ -1503,7 +1504,7 @@ static void OnRxBeaconDataTimerEvent( void )
 {
   TimerStop( &RxBeaconDataTimer );
   
-  RxBeaconChannel();
+  RxBeaconChannelWithTimeout(1000);
 }
 static void OnRxWindow2TimerEvent( void )
 {
@@ -3178,7 +3179,7 @@ LoRaMacStatus_t LoRaMacMlmeRequest( MlmeReq_t *mlmeRequest )
         case MLME_BEACON:
         {
           DBG_PRINTF( "\n\r*** <MLME BEACON>\n\r" );
-          RxBeaconChannel();
+          RxBeaconChannelWithTimeout(9000);
           break;
         }
         case MLME_JOIN:
