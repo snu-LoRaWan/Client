@@ -140,6 +140,7 @@ static  LoRaParam_t* LoRaParamInit;
  * Timer to handle the application data transmission duty cycle
  */
 static TimerEvent_t TxNextPacketTimer;
+static TimerEvent_t RxNextBeaconTimer;
 
 static DeviceState_t DeviceState = DEVICE_STATE_INIT ;
 
@@ -286,6 +287,29 @@ static void OnTxNextPacketTimerEvent( void )
 {
     TimerStop( &TxNextPacketTimer );
     OnSendEvent();
+}
+
+static void OnRxNextBeaconTimerEvent( void)
+{
+  TimerStop( &RxNextBeaconTimer );
+  MibRequestConfirm_t mibReq;
+  LoRaMacStatus_t status;
+
+  mibReq.Type = MIB_NETWORK_JOINED;
+  status = LoRaMacMibGetRequestConfirm( &mibReq );
+
+  if( status == LORAMAC_STATUS_OK )
+  {
+      if( mibReq.Param.IsNetworkJoined == true )
+      {
+          DeviceState = DEVICE_STATE_BEACON;
+          NextTx = true;
+      }
+      else
+      {
+          DeviceState = DEVICE_STATE_JOIN;
+      }
+  }
 }
 
 /*!
@@ -640,6 +664,7 @@ void lora_fsm( void)
 #endif
 
         TimerInit( &TxNextPacketTimer, OnTxNextPacketTimerEvent );
+        TimerInit( &RxNextBeaconTimer, OnRxNextBeaconTimerEvent );
         
         mibReq.Type = MIB_ADR;
         mibReq.Param.AdrEnable = LoRaParamInit->AdrEnable;
@@ -678,9 +703,27 @@ void lora_fsm( void)
       DeviceState = DEVICE_STATE_JOIN;
       break;
     }
+    case DEVICE_STATE_BEACON:
+    {
+      PRINTF("BEACON\n\r"); 
+      MlmeReq_t mlmeReq;
+
+      mlmeReq.Type = MLME_BEACON;
+      LoRaMacMlmeRequest( &mlmeReq );
+
+      TimerSetValue( &RxNextBeaconTimer, LoRaParamInit->RxBeaconCycleTime );
+      TimerStart( &RxNextBeaconTimer );
+
+      TimerSetValue( &TxNextPacketTimer,  5000); /* postpone Tx */
+      TimerStart( &TxNextPacketTimer );
+
+      DeviceState = DEVICE_STATE_SLEEP;
+      break;
+    }
     case DEVICE_STATE_JOIN:
     {
 #if( OVER_THE_AIR_ACTIVATION != 0 )
+      /* OTAA Join */
       MlmeReq_t mlmeReq;
     
       mlmeReq.Type = MLME_JOIN;
@@ -693,6 +736,9 @@ void lora_fsm( void)
       {
           LoRaMacMlmeRequest( &mlmeReq );
       }
+
+      TimerSetValue( &RxNextBeaconTimer, 20000 ); /* wait for joining */
+      TimerStart( &RxNextBeaconTimer );
 
       DeviceState = DEVICE_STATE_SLEEP;
 #else

@@ -98,7 +98,8 @@ typedef enum eDevicState
     DEVICE_STATE_JOINED,
     DEVICE_STATE_SEND,
     DEVICE_STATE_CYCLE,
-    DEVICE_STATE_SLEEP
+    DEVICE_STATE_SLEEP,
+    DEVICE_STATE_BEACON
 } DeviceState_t;
 
 /*!
@@ -155,6 +156,10 @@ typedef struct sLoRaParam
  * @brief Number of trials for the join request.
  */
     uint8_t NbTrials;
+/*!
+ * @brief Beacon Cycle
+ */
+    uint32_t RxBeaconCycleTime;
 
 } LoRaParam_t;
 

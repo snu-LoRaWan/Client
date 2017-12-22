@@ -337,6 +337,7 @@ static TimerEvent_t TxDelayedTimer;
  */
 static TimerEvent_t RxWindowTimer1;
 static TimerEvent_t RxWindowTimer2;
+static TimerEvent_t RxBeaconDataTimer;
 
 /*!
  * LoRaMac reception windows delay
@@ -349,6 +350,7 @@ static uint32_t RxWindow2Delay;
 /*!
  * LoRaMac Rx windows configuration
  */
+static RxConfigParams_t RxBeaconConfig;
 static RxConfigParams_t RxWindow1Config;
 static RxConfigParams_t RxWindow2Config;
 
@@ -750,6 +752,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
     switch( macHdr.Bits.MType )
     {
         case FRAME_TYPE_JOIN_ACCEPT:
+            DBG_PRINTF( "\n\r*** [JoinAccept]\n\r" );
             if( IsLoRaMacNetworkJoined == true )
             {
                 McpsIndication.Status = LORAMAC_EVENT_INFO_STATUS_ERROR;
@@ -834,6 +837,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                 address |= ( (uint32_t)payload[pktHeaderLen++] << 8 );
                 address |= ( (uint32_t)payload[pktHeaderLen++] << 16 );
                 address |= ( (uint32_t)payload[pktHeaderLen++] << 24 );
+                DBG_PRINTF( "\n\r*** [Downlink] addr = %d *****\n\r",  address);
 
                 if( address != LoRaMacDevAddr )
                 {
@@ -1105,19 +1109,25 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                 LoRaMacFlags.Bits.McpsInd = 1;
                 break;
             }
-        case FRAME_TYPE_RFU:
+        case FRAME_TYPE_BEACON:
             {
-                address = payload[pktHeaderLen++];
-                address |= ( (uint32_t)payload[pktHeaderLen++] << 8 );
-                address |= ( (uint32_t)payload[pktHeaderLen++] << 16 );
-                address |= ( (uint32_t)payload[pktHeaderLen++] << 24 );
-                if( address == LoRaMacDevAddr )
-                {
-                    /*
-                     * MY Beacon!
-                     */
-                }
-                break;
+              address = payload[pktHeaderLen++];
+              address |= ( (uint32_t)payload[pktHeaderLen++] << 8 );
+              address |= ( (uint32_t)payload[pktHeaderLen++] << 16 );
+              address |= ( (uint32_t)payload[pktHeaderLen++] << 24 );
+
+              DBG_PRINTF( "\n\r*** [Beacon] addr = %u *****\n\r",  address);
+
+              if( address == LoRaMacDevAddr )
+              {
+                /*
+                 * Start to listen to downstream
+                 */
+                TimerSetValue( &RxBeaconDataTimer, 500 );
+                TimerStart( &RxBeaconDataTimer );
+
+              }
+              break;
             }
         default:
             McpsIndication.Status = LORAMAC_EVENT_INFO_STATUS_ERROR;
@@ -1476,6 +1486,26 @@ static void OnRxWindow1TimerEvent( void )
     RxWindowSetup( RxWindow1Config.RxContinuous, LoRaMacParams.MaxRxWindow );
 }
 
+static void RxBeaconChannelWithTimeout ( uint32_t timeout )
+{
+  RxBeaconConfig.Channel = Channel;
+  RxBeaconConfig.RepeaterSupport = RepeaterSupport;
+  RxBeaconConfig.RxContinuous = false;
+  RxBeaconConfig.Window = 1;
+  RxBeaconConfig.Frequency = LoRaMacParamsDefaults.RxBeaconChannel.Frequency;
+  RxBeaconConfig.Datarate = LoRaMacParamsDefaults.RxBeaconChannel.Datarate;
+  RxBeaconConfig.WindowTimeout = timeout;
+
+  RegionRxConfig( LoRaMacRegion, &RxBeaconConfig, ( int8_t* )&McpsIndication.RxDatarate );
+  RxWindowSetup( RxBeaconConfig.RxContinuous, LoRaMacParams.MaxRxWindow );
+}
+
+static void OnRxBeaconDataTimerEvent( void )
+{
+  TimerStop( &RxBeaconDataTimer );
+  
+  RxBeaconChannelWithTimeout(1000);
+}
 static void OnRxWindow2TimerEvent( void )
 {
     TimerStop( &RxWindowTimer2 );
@@ -2408,6 +2438,9 @@ LoRaMacStatus_t LoRaMacInitialization( LoRaMacPrimitives_t *primitives, LoRaMacC
     phyParam = RegionGetPhyParam( LoRaMacRegion, &getPhy );
     LoRaMacParamsDefaults.AntennaGain = phyParam.fValue;
 
+    LoRaMacParamsDefaults.RxBeaconChannel.Datarate = 1; // DR_0: SF12 - BW125
+    LoRaMacParamsDefaults.RxBeaconChannel.Frequency = 921900000; // KR920_RX_WND_2_FREQ
+
     RegionInitDefaults( LoRaMacRegion, INIT_TYPE_INIT );
 
     // Init parameters which are not set in function ResetMacParameters
@@ -2434,6 +2467,8 @@ LoRaMacStatus_t LoRaMacInitialization( LoRaMacPrimitives_t *primitives, LoRaMacC
     TimerInit( &RxWindowTimer1, OnRxWindow1TimerEvent );
     TimerInit( &RxWindowTimer2, OnRxWindow2TimerEvent );
     TimerInit( &AckTimeoutTimer, OnAckTimeoutTimerEvent );
+
+    TimerInit( &RxBeaconDataTimer, OnRxBeaconDataTimerEvent );
 
     // Store the current initialization time
     LoRaMacInitializationTime = TimerGetCurrentTime( );
@@ -3141,8 +3176,15 @@ LoRaMacStatus_t LoRaMacMlmeRequest( MlmeReq_t *mlmeRequest )
 
     switch( mlmeRequest->Type )
     {
+        case MLME_BEACON:
+        {
+          DBG_PRINTF( "\n\r*** <MLME BEACON>\n\r" );
+          RxBeaconChannelWithTimeout(9000);
+          break;
+        }
         case MLME_JOIN:
         {
+          DBG_PRINTF( "\n\r*** <MLME JOIN>\n\r" );
             if( ( LoRaMacState & LORAMAC_TX_DELAYED ) == LORAMAC_TX_DELAYED )
             {
                 return LORAMAC_STATUS_BUSY;
