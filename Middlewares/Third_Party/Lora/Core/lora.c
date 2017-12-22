@@ -737,7 +737,10 @@ void lora_fsm( void)
           LoRaMacMlmeRequest( &mlmeReq );
       }
 
-      DeviceState = DEVICE_STATE_BEACON;
+      TimerSetValue( &RxNextBeaconTimer, 20000 ); /* wait for joining */
+      TimerStart( &RxNextBeaconTimer );
+
+      DeviceState = DEVICE_STATE_SLEEP;
 #else
       mibReq.Type = MIB_NET_ID;
       mibReq.Param.NetID = LORAWAN_NETWORK_ID;
