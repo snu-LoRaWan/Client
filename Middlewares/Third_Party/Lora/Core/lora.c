@@ -140,7 +140,7 @@ static  LoRaParam_t* LoRaParamInit;
  * Timer to handle the application data transmission duty cycle
  */
 static TimerEvent_t TxNextPacketTimer;
-static TimerEvent_t SxNextBeaconTimer;
+static TimerEvent_t RxNextBeaconTimer;
 
 static DeviceState_t DeviceState = DEVICE_STATE_INIT ;
 
@@ -289,9 +289,9 @@ static void OnTxNextPacketTimerEvent( void )
     OnSendEvent();
 }
 
-static void OnSxNextBeaconTimerEvent( void)
+static void OnRxNextBeaconTimerEvent( void)
 {
-  TimerStop( &SxNextBeaconTimer );
+  TimerStop( &RxNextBeaconTimer );
   MibRequestConfirm_t mibReq;
   LoRaMacStatus_t status;
 
@@ -664,7 +664,7 @@ void lora_fsm( void)
 #endif
 
         TimerInit( &TxNextPacketTimer, OnTxNextPacketTimerEvent );
-        TimerInit( &SxNextBeaconTimer, OnSxNextBeaconTimerEvent );
+        TimerInit( &RxNextBeaconTimer, OnRxNextBeaconTimerEvent );
         
         mibReq.Type = MIB_ADR;
         mibReq.Param.AdrEnable = LoRaParamInit->AdrEnable;
@@ -711,8 +711,8 @@ void lora_fsm( void)
       mlmeReq.Type = MLME_BEACON;
       LoRaMacMlmeRequest( &mlmeReq );
 
-      TimerSetValue( &SxNextBeaconTimer, LoRaParamInit->RxBeaconCycleTime );
-      TimerStart( &SxNextBeaconTimer );
+      TimerSetValue( &RxNextBeaconTimer, LoRaParamInit->RxBeaconCycleTime );
+      TimerStart( &RxNextBeaconTimer );
 
       TimerSetValue( &TxNextPacketTimer,  5000); /* postpone Tx */
       TimerStart( &TxNextPacketTimer );
