@@ -140,6 +140,7 @@ static  LoRaParam_t* LoRaParamInit;
  * Timer to handle the application data transmission duty cycle
  */
 static TimerEvent_t TxNextPacketTimer;
+static TimerEvent_t SxNextBeaconTimer;
 
 static DeviceState_t DeviceState = DEVICE_STATE_INIT ;
 
