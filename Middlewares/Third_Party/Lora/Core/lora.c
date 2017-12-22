@@ -705,6 +705,7 @@ void lora_fsm( void)
     }
     case DEVICE_STATE_BEACON:
     {
+      PRINTF("BEACON\n\r"); 
       MlmeReq_t mlmeReq;
 
       mlmeReq.Type = MLME_BEACON;
