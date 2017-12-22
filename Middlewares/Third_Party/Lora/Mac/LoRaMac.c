@@ -1106,7 +1106,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                 LoRaMacFlags.Bits.McpsInd = 1;
                 break;
             }
-        case FRAME_TYPE_RFU:
+        case FRAME_TYPE_BEACON:
             {
                 address = payload[pktHeaderLen++];
                 address |= ( (uint32_t)payload[pktHeaderLen++] << 8 );
@@ -1115,7 +1115,7 @@ static void OnRadioRxDone( uint8_t *payload, uint16_t size, int16_t rssi, int8_t
                 if( address == LoRaMacDevAddr )
                 {
                     /*
-                     * MY Beacon!
+                     * Start to listen to downstream
                      */
                 }
                 break;

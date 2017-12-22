@@ -381,9 +381,9 @@ typedef enum eLoRaMacFrameType
      */
     FRAME_TYPE_DATA_CONFIRMED_DOWN   = 0x05,
     /*!
-     * LoRaMAC RFU frame
+     * LoRaMAC beacon frame
      */
-    FRAME_TYPE_RFU                   = 0x06,
+    FRAME_TYPE_BEACON                = 0x06,
     /*!
      * LoRaMAC proprietary frame
      */
