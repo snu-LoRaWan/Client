@@ -288,6 +288,29 @@ static void OnTxNextPacketTimerEvent( void )
     OnSendEvent();
 }
 
+static void OnSxNextBeaconTimerEvent( void)
+{
+  TimerStop( &SxNextBeaconTimer );
+  MibRequestConfirm_t mibReq;
+  LoRaMacStatus_t status;
+
+  mibReq.Type = MIB_NETWORK_JOINED;
+  status = LoRaMacMibGetRequestConfirm( &mibReq );
+
+  if( status == LORAMAC_STATUS_OK )
+  {
+      if( mibReq.Param.IsNetworkJoined == true )
+      {
+          DeviceState = DEVICE_STATE_BEACON;
+          NextTx = true;
+      }
+      else
+      {
+          DeviceState = DEVICE_STATE_JOIN;
+      }
+  }
+}
+
 /*!
  * \brief   MCPS-Confirm event function
  *
